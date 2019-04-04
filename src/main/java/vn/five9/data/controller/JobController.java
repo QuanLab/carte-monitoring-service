@@ -6,6 +6,9 @@ import org.springframework.web.bind.annotation.*;
 import vn.five9.data.model.*;
 import vn.five9.data.service.JobService;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -14,13 +17,10 @@ public class JobController {
     private static final Logger logger  = LogManager.getLogger();
 
     @RequestMapping("/api/v1/jobs")
-    public JobList jobList(@RequestParam(value="limit", defaultValue="20") String limit,
-                            @RequestParam(value="offset", defaultValue="0") String offset) {
+    public JobList jobList(@RequestParam(value="limit", defaultValue="20") int limit,
+                            @RequestParam(value="offset", defaultValue="0") int offset) {
 
-        int limitInt = Integer.parseInt(limit);
-        int offsetInt = Integer.parseInt(offset);
-
-        return JobService.getJobList(limitInt, offsetInt);
+        return JobService.getJobList(limit, offset);
     }
 
     @PostMapping("/api/v1/job")
@@ -52,20 +52,26 @@ public class JobController {
 
     @RequestMapping("/api/v1/search")
     public List<Job> searchJobs(@RequestParam(value="q", defaultValue="") String term,
-                             @RequestParam(value="limit", defaultValue="10") String limit) {
-
-        int limitInt = Integer.parseInt(limit);
-        return JobService.searchJobs(term, limitInt);
+                             @RequestParam(value="limit", defaultValue="10") int limit) {
+        return JobService.searchJobs(term, limit);
     }
 
     @RequestMapping("/api/v1/advancedSearch")
     public List<Job> advancedSearchJobs(@RequestParam(value="q", defaultValue="") String term,
                                         @RequestParam(value="status", defaultValue="") String status,
                                         @RequestParam(value="created_date", defaultValue="") String createdDate,
-                                @RequestParam(value="limit", defaultValue="10") String limit) {
+                                        @RequestParam(value="scheduler_type", defaultValue="-1") int schedulerType,
+                                @RequestParam(value="limit", defaultValue="10") int limit) {
 
-        int limitInt = Integer.parseInt(limit);
-        return JobService.advancedSearchJobs(term, status, createdDate, limitInt);
+        Date created = null;
+        try {
+            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            created = dateFormat.parse(createdDate);
+        }catch (Exception e) {
+            logger.info("Created date is not set on filter condition");
+        }
+
+        return JobService.advancedSearchJobs(term, status, created, schedulerType, limit);
     }
 
     @PostMapping("/api/v1/startJob")

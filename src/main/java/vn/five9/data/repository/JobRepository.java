@@ -1,5 +1,7 @@
 package vn.five9.data.repository;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import vn.five9.data.db.ConnectionProvider;
 import vn.five9.data.model.Job;
 import vn.five9.data.model.JobStatus;
@@ -13,6 +15,8 @@ import java.util.List;
 
 public class JobRepository {
 
+    private static final Logger logger = LogManager.getLogger();
+
     /**
      * get list of job
      */
@@ -25,7 +29,7 @@ public class JobRepository {
                 "        MODIFIED_DATE," +
                 "        CASE WHEN B.VALUE_NUM IS NULL THEN 0 ELSE B.VALUE_NUM END AS SCHEDULER_TYPE," +
                 "        CASE WHEN C.VALUE_STR IS NULL THEN 'N' ELSE C.VALUE_STR END AS IS_REPEAT," +
-                "        CASE WHEN B.VALUE_NUM IS NULL THEN 0 ELSE B.VALUE_NUM END AS INTERVAL_SECONDS," +
+                "        CASE WHEN D.VALUE_NUM IS NULL THEN 0 ELSE D.VALUE_NUM END AS INTERVAL_SECONDS," +
                 "        CASE WHEN E.VALUE_NUM IS NULL THEN 0 ELSE E.VALUE_NUM END AS INTERVAL_MINUTES," +
                 "        CASE WHEN F.VALUE_NUM IS NULL THEN 0 ELSE F.VALUE_NUM END AS HOUR," +
                 "        CASE WHEN G.VALUE_NUM IS NULL THEN 0 ELSE G.VALUE_NUM END AS MINUTES," +
@@ -95,47 +99,47 @@ public class JobRepository {
     public static List<Job> findJobs(String name, int limit) throws SQLException {
         String query =
                 "SELECT" +
-                "        A.ID_JOB," +
-                "        NAME," +
-                "        CASE WHEN DESCRIPTION IS NULL THEN '' ELSE DESCRIPTION END AS DESCRIPTION," +
-                "        CREATED_DATE," +
-                "        MODIFIED_DATE," +
-                "        CASE WHEN B.VALUE_NUM IS NULL THEN 0 ELSE B.VALUE_NUM END AS SCHEDULER_TYPE," +
-                "        CASE WHEN C.VALUE_STR IS NULL THEN 'N' ELSE C.VALUE_STR END AS IS_REPEAT," +
-                "        CASE WHEN B.VALUE_NUM IS NULL THEN 0 ELSE B.VALUE_NUM END AS INTERVAL_SECONDS," +
-                "        CASE WHEN E.VALUE_NUM  IS NULL THEN 0 ELSE E.VALUE_NUM END AS INTERVAL_MINUTES," +
-                "        CASE WHEN F.VALUE_NUM  IS NULL THEN 0 ELSE F.VALUE_NUM END AS HOUR," +
-                "        CASE WHEN G.VALUE_NUM IS NULL THEN 0 ELSE G.VALUE_NUM END AS MINUTES," +
-                "        CASE WHEN H.VALUE_NUM IS NULL THEN 0 ELSE H.VALUE_NUM END AS WEEK_DAY," +
-                "        CASE WHEN I.VALUE_NUM IS NULL THEN 0 ELSE I.VALUE_NUM END AS DAY_OF_MONTH " +
-                "FROM (" +
-                "                SELECT ID_JOB, NAME, DESCRIPTION, CREATED_DATE, MODIFIED_DATE FROM R_JOB WHERE NAME LIKE ?" +
-                ") AS A" +
-                "        LEFT JOIN (" +
-                "                SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'schedulerType'" +
-                ") AS B ON  A.ID_JOB = B.ID_JOB" +
-                "        LEFT JOIN (" +
-                "                SELECT ID_JOB, VALUE_STR FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'repeat'" +
-                ") AS C ON  A.ID_JOB = C.ID_JOB" +
-                "        LEFT JOIN (" +
-                "        SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'intervalSeconds'" +
-                ") AS D ON  A.ID_JOB = D.ID_JOB" +
-                "        LEFT JOIN (" +
-                "                SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'intervalMinutes'" +
-                ") AS E ON  A.ID_JOB = E.ID_JOB" +
-                "        LEFT JOIN (" +
-                "                SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'hour'" +
-                ") AS F ON  A.ID_JOB = F.ID_JOB" +
-                "        LEFT JOIN (" +
-                "                SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'minutes'" +
-                ") AS G ON  A.ID_JOB = G.ID_JOB " +
-                "        LEFT JOIN (" +
-                "                SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'weekDay'" +
-                ") AS H ON  A.ID_JOB = H.ID_JOB" +
-                "        LEFT JOIN (" +
-                "                SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'dayOfMonth'\n" +
-                ") AS I ON  A.ID_JOB = I.ID_JOB" +
-                "        LIMIT ?;";
+                        "        A.ID_JOB," +
+                        "        NAME," +
+                        "        CASE WHEN DESCRIPTION IS NULL THEN '' ELSE DESCRIPTION END AS DESCRIPTION," +
+                        "        CREATED_DATE," +
+                        "        MODIFIED_DATE," +
+                        "        CASE WHEN B.VALUE_NUM IS NULL THEN 0 ELSE B.VALUE_NUM END AS SCHEDULER_TYPE," +
+                        "        CASE WHEN C.VALUE_STR IS NULL THEN 'N' ELSE C.VALUE_STR END AS IS_REPEAT," +
+                        "        CASE WHEN D.VALUE_NUM IS NULL THEN 0 ELSE D.VALUE_NUM END AS INTERVAL_SECONDS," +
+                        "        CASE WHEN E.VALUE_NUM  IS NULL THEN 0 ELSE E.VALUE_NUM END AS INTERVAL_MINUTES," +
+                        "        CASE WHEN F.VALUE_NUM  IS NULL THEN 0 ELSE F.VALUE_NUM END AS HOUR," +
+                        "        CASE WHEN G.VALUE_NUM IS NULL THEN 0 ELSE G.VALUE_NUM END AS MINUTES," +
+                        "        CASE WHEN H.VALUE_NUM IS NULL THEN 0 ELSE H.VALUE_NUM END AS WEEK_DAY," +
+                        "        CASE WHEN I.VALUE_NUM IS NULL THEN 0 ELSE I.VALUE_NUM END AS DAY_OF_MONTH " +
+                        "FROM (" +
+                        "                SELECT ID_JOB, NAME, DESCRIPTION, CREATED_DATE, MODIFIED_DATE FROM R_JOB WHERE NAME LIKE ?" +
+                        ") AS A" +
+                        "        LEFT JOIN (" +
+                        "                SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'schedulerType'" +
+                        ") AS B ON  A.ID_JOB = B.ID_JOB" +
+                        "        LEFT JOIN (" +
+                        "                SELECT ID_JOB, VALUE_STR FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'repeat'" +
+                        ") AS C ON  A.ID_JOB = C.ID_JOB" +
+                        "        LEFT JOIN (" +
+                        "        SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'intervalSeconds'" +
+                        ") AS D ON  A.ID_JOB = D.ID_JOB" +
+                        "        LEFT JOIN (" +
+                        "                SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'intervalMinutes'" +
+                        ") AS E ON  A.ID_JOB = E.ID_JOB" +
+                        "        LEFT JOIN (" +
+                        "                SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'hour'" +
+                        ") AS F ON  A.ID_JOB = F.ID_JOB" +
+                        "        LEFT JOIN (" +
+                        "                SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'minutes'" +
+                        ") AS G ON  A.ID_JOB = G.ID_JOB " +
+                        "        LEFT JOIN (" +
+                        "                SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'weekDay'" +
+                        ") AS H ON  A.ID_JOB = H.ID_JOB" +
+                        "        LEFT JOIN (" +
+                        "                SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'dayOfMonth'\n" +
+                        ") AS I ON  A.ID_JOB = I.ID_JOB" +
+                        "        LIMIT ?;";
 
         Connection conn = ConnectionProvider.getConnection();
         List<Job> jobList = new ArrayList<>();
@@ -168,18 +172,11 @@ public class JobRepository {
     /**
      * get list of job
      */
-    public static List<Job> findJobs(String name, String status, Date dateCreated, int limit) throws SQLException {
-
-        List<JobStatus> jobStatusList = CarteService.getServerStatus().getJobStatusList();
-
-        for(JobStatus jobStatus : jobStatusList) {
-            if (jobStatus.getStatusDesc().equals(status.toUpperCase())) {
-
-            }
-        }
-
-        String query =
-                "SELECT" +
+    public static List<Job> findJobs(String term, String status, Date createdDate, int schedulerType, int limit)
+            throws SQLException, NullPointerException {
+        List<Job> jobList = new ArrayList<>();
+        StringBuilder query =  new StringBuilder();
+        query.append("SELECT" +
                 "        A.ID_JOB," +
                 "        NAME," +
                 "        CASE WHEN DESCRIPTION IS NULL THEN '' ELSE DESCRIPTION END AS DESCRIPTION," +
@@ -187,7 +184,7 @@ public class JobRepository {
                 "        MODIFIED_DATE," +
                 "        CASE WHEN B.VALUE_NUM IS NULL THEN 0 ELSE B.VALUE_NUM END AS SCHEDULER_TYPE," +
                 "        CASE WHEN C.VALUE_STR IS NULL THEN 'N' ELSE C.VALUE_STR END AS IS_REPEAT," +
-                "        CASE WHEN B.VALUE_NUM IS NULL THEN 0 ELSE B.VALUE_NUM END AS INTERVAL_SECONDS," +
+                "        CASE WHEN D.VALUE_NUM IS NULL THEN 0 ELSE D.VALUE_NUM END AS INTERVAL_SECONDS," +
                 "        CASE WHEN E.VALUE_NUM  IS NULL THEN 0 ELSE E.VALUE_NUM END AS INTERVAL_MINUTES," +
                 "        CASE WHEN F.VALUE_NUM  IS NULL THEN 0 ELSE F.VALUE_NUM END AS HOUR," +
                 "        CASE WHEN G.VALUE_NUM IS NULL THEN 0 ELSE G.VALUE_NUM END AS MINUTES," +
@@ -219,19 +216,84 @@ public class JobRepository {
                 ") AS H ON  A.ID_JOB = H.ID_JOB " +
                 "LEFT JOIN (" +
                 "    SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'dayOfMonth'" +
-                ") AS I ON  A.ID_JOB = I.ID_JOB WHERE 1 = 1 ";
-
-        if (dateCreated != null) {
-            query = query + "AND A.CREATED_DATE = ? ";
-        }
+                ") AS I ON  A.ID_JOB = I.ID_JOB " +
+                "WHERE 1=1 ");
 
         Connection conn = ConnectionProvider.getConnection();
-        List<Job> jobList = new ArrayList<>();
-        PreparedStatement pst = conn.prepareStatement(query);
-        pst.setString(1, "%" + name + "%");
-        pst.setInt(2, limit);
-        ResultSet rs = pst.executeQuery();
+        PreparedStatement pst = null;
+        if (status.equals("")) {
+            if (!term.equals("")) {
+                query.append("AND (A.NAME LIKE ? OR A.DESCRIPTION LIKE ?) ");
+            }
+            if (createdDate != null) {
+                query.append("AND A.CREATED_DATE =? ");
+            }
+            if (schedulerType != -1) {
+                query.append("AND B.VALUE_NUM =? ");
+            }
+            query.append( "LIMIT ?;");
 
+            pst = conn.prepareStatement(query.toString());
+
+            int index = 1;
+            if (!term.equals("")) {
+                pst.setString(index, "%" + term + "%");
+                index++;
+                pst.setString(index, "%" + term + "%");
+                index++;
+            }
+            if (createdDate != null) {
+                pst.setDate(index, new java.sql.Date(createdDate.getTime()));
+                index++;
+            }
+            if (schedulerType != -1) {
+                pst.setInt(index, schedulerType);
+                index++;
+            }
+            pst.setInt(index, limit);
+
+        } else {
+            List<String> jobNameList = new ArrayList<>();
+            List<JobStatus> jobStatusList = CarteService.getJobStatusSet();
+            for (JobStatus jobStatus : jobStatusList) {
+                System.out.println(jobStatus.toString());
+                if (jobStatus.getStatusDesc().toUpperCase().equals(status.toUpperCase())) {
+                    jobNameList.add(jobStatus.getJobName());
+                }
+            }
+
+            if (!term.equals("")) {
+                query.append("AND (A.NAME LIKE ? OR A.DESCRIPTION LIKE ?) ");
+            }
+
+            if (jobNameList.size() > 0) {
+                query.append("AND A.NAME IN ( ");
+                for (int i =0; i < jobNameList.size(); i++) {
+                    query.append("?, ");
+                }
+                query.append(" '')");
+
+                System.out.println(query.toString());
+                System.out.println(jobNameList);
+                pst = conn.prepareStatement(query.toString());
+                int index = 1;
+                if(!term.equals("")) {
+                    pst.setString(index, "%" + term + "%");
+                    index ++;
+                    pst.setString(index, "%" + term + "%");
+                    index ++;
+                }
+                for (String name : jobNameList) {
+                    pst.setString(index, name);
+                    index++;
+                }
+            } else {
+                conn.close();
+                return jobList;
+            }
+        }
+
+        ResultSet rs = pst.executeQuery();
         while (rs.next()) {
             Job job = new Job();
             job.setID(rs.getInt("ID_JOB"));
@@ -255,7 +317,7 @@ public class JobRepository {
 
 
     public static List<String> findJobByName(String term, int limit) {
-        List<String> keywords  = new ArrayList<>();
+        List<String> keywords = new ArrayList<>();
         String sql = "SELECT NAME FROM R_JOB WHERE NAME LIKE ? LIMIT ?;";
         Connection conn = ConnectionProvider.getConnection();
         try {
@@ -267,11 +329,11 @@ public class JobRepository {
                 keywords.add(rs.getString("NAME"));
             }
             conn.close();
-        }catch (Exception e) {
-            if (conn!= null) {
+        } catch (Exception e) {
+            if (conn != null) {
                 try {
                     conn.close();
-                }catch (Exception ex) {
+                } catch (Exception ex) {
 
                 }
             }
@@ -326,13 +388,13 @@ public class JobRepository {
             conn.close();
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         return false;
     }
 
-
     /**
+     * generate sql query based on code and value
      *
      * @param valueNum
      * @param jobId

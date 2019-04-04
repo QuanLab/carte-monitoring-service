@@ -13,9 +13,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-
+/**
+ * @author quanpv
+ */
 public class CarteService {
-
 
     /**
      * Get server status from Carte server
@@ -44,12 +45,10 @@ public class CarteService {
         Map<String,JobStatus> jobStatusMap = new HashMap<>();
         for(JobStatus jobStatus : list) {
             if(jobStatusMap.containsKey(jobStatus.getJobName())) {
-                JobStatus tmp = jobStatusMap.get(jobStatus.getJobName());
-
-                if(jobStatus.getLogDate().before(tmp.getLogDate())) {
+                JobStatus jobStatusOld = jobStatusMap.get(jobStatus.getJobName());
+                if(jobStatusOld.getLogDate().before(jobStatus.getLogDate())) {
                     jobStatusMap.put(jobStatus.getJobName(), jobStatus);
                 }
-
             } else {
                 jobStatusMap.put(jobStatus.getJobName(), jobStatus);
             }

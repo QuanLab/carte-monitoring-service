@@ -12,12 +12,10 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 import java.io.StringReader;
 import java.net.URLEncoder;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
- *
+ * @author quanpv
  */
 public class JobService {
 
@@ -118,12 +116,10 @@ public class JobService {
      *  the number of jobs will be return
      * @return
      */
-    public static List<Job> advancedSearchJobs(String name, String status, String createdDate, int limit) {
+    public static List<Job> advancedSearchJobs(String term, String status, Date createdDate, int schedulerType, int limit) {
         List<Job> list = new ArrayList<>();
         try {
-            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            Date created = dateFormat.parse(createdDate);
-            list = JobRepository.findJobs(name, status, created, limit);
+            list = JobRepository.findJobs(term, status, createdDate, schedulerType, limit);
         }catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
@@ -150,7 +146,6 @@ public class JobService {
         }
         return null;
     }
-
 
     /**
      * get status of instance currently running
