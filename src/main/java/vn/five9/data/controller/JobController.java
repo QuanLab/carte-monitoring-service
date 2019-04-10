@@ -49,29 +49,30 @@ public class JobController {
         return JobService.getJobStatusList(name);
     }
 
-
-    @RequestMapping("/api/v1/search")
-    public List<Job> searchJobs(@RequestParam(value="q", defaultValue="") String term,
-                             @RequestParam(value="limit", defaultValue="10") int limit) {
-        return JobService.searchJobs(term, limit);
-    }
-
     @RequestMapping("/api/v1/advancedSearch")
     public List<Job> advancedSearchJobs(@RequestParam(value="q", defaultValue="") String term,
                                         @RequestParam(value="status", defaultValue="") String status,
-                                        @RequestParam(value="created_date", defaultValue="") String createdDate,
+                                        @RequestParam(value="from", defaultValue="") String from,
+                                        @RequestParam(value="to", defaultValue="") String to,
                                         @RequestParam(value="scheduler_type", defaultValue="-1") int schedulerType,
                                 @RequestParam(value="limit", defaultValue="10") int limit) {
 
-        Date created = null;
+        Date fromDate = null;
+        Date toDate = null;
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         try {
-            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            created = dateFormat.parse(createdDate);
+            fromDate = dateFormat.parse(from);
         }catch (Exception e) {
             logger.info("Created date is not set on filter condition");
         }
 
-        return JobService.advancedSearchJobs(term, status, created, schedulerType, limit);
+        try {
+            toDate = dateFormat.parse(to);
+        }catch (Exception e) {
+            logger.info("To date is not set on filter condition");
+        }
+
+        return JobService.advancedSearchJobs(term, status, fromDate, toDate, schedulerType, limit);
     }
 
     @PostMapping("/api/v1/startJob")

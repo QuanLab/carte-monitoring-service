@@ -92,87 +92,10 @@ public class JobRepository {
         return jobList;
     }
 
-
     /**
      * get list of job
      */
-    public static List<Job> findJobs(String name, int limit) throws SQLException {
-        String query =
-                "SELECT" +
-                        "        A.ID_JOB," +
-                        "        NAME," +
-                        "        CASE WHEN DESCRIPTION IS NULL THEN '' ELSE DESCRIPTION END AS DESCRIPTION," +
-                        "        CREATED_DATE," +
-                        "        MODIFIED_DATE," +
-                        "        CASE WHEN B.VALUE_NUM IS NULL THEN 0 ELSE B.VALUE_NUM END AS SCHEDULER_TYPE," +
-                        "        CASE WHEN C.VALUE_STR IS NULL THEN 'N' ELSE C.VALUE_STR END AS IS_REPEAT," +
-                        "        CASE WHEN D.VALUE_NUM IS NULL THEN 0 ELSE D.VALUE_NUM END AS INTERVAL_SECONDS," +
-                        "        CASE WHEN E.VALUE_NUM  IS NULL THEN 0 ELSE E.VALUE_NUM END AS INTERVAL_MINUTES," +
-                        "        CASE WHEN F.VALUE_NUM  IS NULL THEN 0 ELSE F.VALUE_NUM END AS HOUR," +
-                        "        CASE WHEN G.VALUE_NUM IS NULL THEN 0 ELSE G.VALUE_NUM END AS MINUTES," +
-                        "        CASE WHEN H.VALUE_NUM IS NULL THEN 0 ELSE H.VALUE_NUM END AS WEEK_DAY," +
-                        "        CASE WHEN I.VALUE_NUM IS NULL THEN 0 ELSE I.VALUE_NUM END AS DAY_OF_MONTH " +
-                        "FROM (" +
-                        "                SELECT ID_JOB, NAME, DESCRIPTION, CREATED_DATE, MODIFIED_DATE FROM R_JOB WHERE NAME LIKE ?" +
-                        ") AS A" +
-                        "        LEFT JOIN (" +
-                        "                SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'schedulerType'" +
-                        ") AS B ON  A.ID_JOB = B.ID_JOB" +
-                        "        LEFT JOIN (" +
-                        "                SELECT ID_JOB, VALUE_STR FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'repeat'" +
-                        ") AS C ON  A.ID_JOB = C.ID_JOB" +
-                        "        LEFT JOIN (" +
-                        "        SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'intervalSeconds'" +
-                        ") AS D ON  A.ID_JOB = D.ID_JOB" +
-                        "        LEFT JOIN (" +
-                        "                SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'intervalMinutes'" +
-                        ") AS E ON  A.ID_JOB = E.ID_JOB" +
-                        "        LEFT JOIN (" +
-                        "                SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'hour'" +
-                        ") AS F ON  A.ID_JOB = F.ID_JOB" +
-                        "        LEFT JOIN (" +
-                        "                SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'minutes'" +
-                        ") AS G ON  A.ID_JOB = G.ID_JOB " +
-                        "        LEFT JOIN (" +
-                        "                SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'weekDay'" +
-                        ") AS H ON  A.ID_JOB = H.ID_JOB" +
-                        "        LEFT JOIN (" +
-                        "                SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'dayOfMonth'\n" +
-                        ") AS I ON  A.ID_JOB = I.ID_JOB" +
-                        "        LIMIT ?;";
-
-        Connection conn = ConnectionProvider.getConnection();
-        List<Job> jobList = new ArrayList<>();
-        PreparedStatement pst = conn.prepareStatement(query);
-        pst.setString(1, "%" + name + "%");
-        pst.setInt(2, limit);
-        ResultSet rs = pst.executeQuery();
-
-        while (rs.next()) {
-            Job job = new Job();
-            job.setID(rs.getInt("ID_JOB"));
-            job.setName(rs.getString("NAME"));
-            job.setDescription(rs.getString("DESCRIPTION"));
-            job.setCreatedDate(rs.getDate("CREATED_DATE"));
-            job.setModifiedDate(rs.getDate("MODIFIED_DATE"));
-            job.setSchedulerType(rs.getInt("SCHEDULER_TYPE"));
-            job.setIsRepeat(rs.getString("IS_REPEAT"));
-            job.setIntervalSeconds(rs.getInt("INTERVAL_SECONDS"));
-            job.setIntervalMinutes(rs.getInt("INTERVAL_MINUTES"));
-            job.setHours(rs.getInt("HOUR"));
-            job.setMinutes(rs.getInt("MINUTES"));
-            job.setWeekDay(rs.getInt("WEEK_DAY"));
-            job.setDayOfMonth(rs.getInt("DAY_OF_MONTH"));
-            jobList.add(job);
-        }
-        conn.close();
-        return jobList;
-    }
-
-    /**
-     * get list of job
-     */
-    public static List<Job> findJobs(String term, String status, Date createdDate, int schedulerType, int limit)
+    public static List<Job> findJobs(String term, String status, Date fromDate, Date toDate, int schedulerType, int limit)
             throws SQLException, NullPointerException {
         List<Job> jobList = new ArrayList<>();
         StringBuilder query =  new StringBuilder();
@@ -225,14 +148,23 @@ public class JobRepository {
             if (!term.equals("")) {
                 query.append("AND (A.NAME LIKE ? OR A.DESCRIPTION LIKE ?) ");
             }
-            if (createdDate != null) {
-                query.append("AND A.CREATED_DATE =? ");
+            if (fromDate != null) {
+                if(toDate != null) {
+                    query.append("AND A.CREATED_DATE BETWEEN ? AND ?");
+                } else {
+                    query.append("AND A.CREATED_DATE >= ? ");
+                }
+            } else {
+                if(toDate != null) {
+                    query.append("AND A.CREATED_DATE <= ? ");
+                }
             }
             if (schedulerType != -1) {
                 query.append("AND B.VALUE_NUM =? ");
             }
             query.append( "LIMIT ?;");
 
+            logger.info(query.toString());
             pst = conn.prepareStatement(query.toString());
 
             int index = 1;
@@ -242,10 +174,24 @@ public class JobRepository {
                 pst.setString(index, "%" + term + "%");
                 index++;
             }
-            if (createdDate != null) {
-                pst.setDate(index, new java.sql.Date(createdDate.getTime()));
-                index++;
+
+            if (fromDate != null) {
+                if(toDate != null) {
+                    pst.setDate(index, new java.sql.Date(fromDate.getTime()));
+                    index++;
+                    pst.setDate(index, new java.sql.Date(toDate.getTime()));
+                    index++;
+                } else {
+                    pst.setDate(index, new java.sql.Date(fromDate.getTime()));
+                    index++;
+                }
+            } else {
+                if(toDate != null) {
+                    pst.setDate(index, new java.sql.Date(toDate.getTime()));
+                    index++;
+                }
             }
+
             if (schedulerType != -1) {
                 pst.setInt(index, schedulerType);
                 index++;
@@ -256,7 +202,6 @@ public class JobRepository {
             List<String> jobNameList = new ArrayList<>();
             List<JobStatus> jobStatusList = CarteService.getJobStatusSet();
             for (JobStatus jobStatus : jobStatusList) {
-                System.out.println(jobStatus.toString());
                 if (jobStatus.getStatusDesc().toUpperCase().equals(status.toUpperCase())) {
                     jobNameList.add(jobStatus.getJobName());
                 }
@@ -273,6 +218,10 @@ public class JobRepository {
                 }
                 query.append(" '')");
 
+                if (schedulerType != -1) {
+                    query.append("AND B.VALUE_NUM =? ");
+                }
+
                 System.out.println(query.toString());
                 System.out.println(jobNameList);
                 pst = conn.prepareStatement(query.toString());
@@ -287,6 +236,10 @@ public class JobRepository {
                     pst.setString(index, name);
                     index++;
                 }
+                if (schedulerType != -1) {
+                    pst.setInt(index, schedulerType);
+                }
+
             } else {
                 conn.close();
                 return jobList;
@@ -309,36 +262,13 @@ public class JobRepository {
             job.setMinutes(rs.getInt("MINUTES"));
             job.setWeekDay(rs.getInt("WEEK_DAY"));
             job.setDayOfMonth(rs.getInt("DAY_OF_MONTH"));
+            if(!status.equals("")) {
+                job.setStatus(status);
+            }
             jobList.add(job);
         }
         conn.close();
         return jobList;
-    }
-
-
-    public static List<String> findJobByName(String term, int limit) {
-        List<String> keywords = new ArrayList<>();
-        String sql = "SELECT NAME FROM R_JOB WHERE NAME LIKE ? LIMIT ?;";
-        Connection conn = ConnectionProvider.getConnection();
-        try {
-            PreparedStatement pst = conn.prepareStatement(sql);
-            pst.setString(1, "%" + term + "%");
-            pst.setInt(2, limit);
-            ResultSet rs = pst.executeQuery();
-            while (rs.next()) {
-                keywords.add(rs.getString("NAME"));
-            }
-            conn.close();
-        } catch (Exception e) {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (Exception ex) {
-
-                }
-            }
-        }
-        return keywords;
     }
 
 

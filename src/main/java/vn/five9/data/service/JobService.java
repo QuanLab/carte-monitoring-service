@@ -74,52 +74,17 @@ public class JobService {
         return list;
     }
 
-
     /**
      * search job using similar name
-     * @param name
+     * @param term
      * @param limit
      *  the number of jobs will be return
      * @return
      */
-    public static List<Job> searchJobs(String name, int limit) {
+    public static List<Job> advancedSearchJobs(String term, String status, Date fromDate, Date toDate, int schedulerType, int limit) {
         List<Job> list = new ArrayList<>();
         try {
-            list = JobRepository.findJobs(name, limit);
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
-        return list;
-    }
-
-    /**
-     * search job using similar name
-     * @param name
-     * @param limit
-     *  the number of jobs will be return
-     * @return
-     */
-    public static List<String> suggestJobName(String name, int limit) {
-        List<String> list = new ArrayList<>();
-        try {
-            list = JobRepository.findJobByName(name, limit);
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
-        return list;
-    }
-
-    /**
-     * search job using similar name
-     * @param name
-     * @param limit
-     *  the number of jobs will be return
-     * @return
-     */
-    public static List<Job> advancedSearchJobs(String term, String status, Date createdDate, int schedulerType, int limit) {
-        List<Job> list = new ArrayList<>();
-        try {
-            list = JobRepository.findJobs(term, status, createdDate, schedulerType, limit);
+            list = JobRepository.findJobs(term, status, fromDate, toDate, schedulerType, limit);
         }catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
