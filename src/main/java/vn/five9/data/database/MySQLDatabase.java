@@ -1,4 +1,4 @@
-package vn.five9.data.db;
+package vn.five9.data.database;
 
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.logging.log4j.LogManager;
@@ -11,12 +11,13 @@ import java.sql.SQLException;
 /**
  * provide connection pool
  */
-public class ConnectionProvider {
+public class MySQLDatabase {
 
     private static final Logger logger = LogManager.getLogger();
-    private static BasicDataSource ds = new BasicDataSource();
+    private static MySQLDatabase instance = null;
+    private BasicDataSource ds = new BasicDataSource();
 
-    static {
+    private void init(){
         ds.setDriverClassName(Config.repositoryDrive);
         ds.setUrl(Config.repositoryUrl);
         ds.setUsername(Config.repositoryUsername);
@@ -26,15 +27,22 @@ public class ConnectionProvider {
         ds.setMaxOpenPreparedStatements(100);
     }
 
-    private ConnectionProvider() {
+    private MySQLDatabase() {
+        init();
+    }
 
+    public static MySQLDatabase getInstance() {
+        if(instance == null) {
+            instance = new MySQLDatabase();
+        }
+        return instance;
     }
 
     /**
      *
      * @return
      */
-    public static Connection getConnection() {
+    public Connection getConnection() {
         Connection conn = null;
         try {
             conn = ds.getConnection();

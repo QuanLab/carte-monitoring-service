@@ -3,7 +3,9 @@ package vn.five9.data.service;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.pentaho.di.cluster.HttpUtil;
+import org.quartz.SchedulerException;
 import vn.five9.data.config.Config;
+import vn.five9.data.job.SchedulerManager;
 import vn.five9.data.model.*;
 import vn.five9.data.repository.JobRepository;
 import vn.five9.data.util.RestUtil;
@@ -33,10 +35,10 @@ public class JobService {
         List<Job> list = new ArrayList<>();
         try {
             list = JobRepository.getJobs(limit, offset);
+            list = updateJobStatus(list);
         }catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
-        list = updateJobStatus(list);
 
         JobList jobList = new JobList();
         if (list.size() > limit) {
@@ -55,12 +57,11 @@ public class JobService {
      * @param list
      * @return
      */
-    private static List<Job> updateJobStatus(List<Job> list) {
+    private static List<Job> updateJobStatus(List<Job> list) throws SchedulerException{
         List<JobStatus> jobStatusList = CarteService.getServerStatus().getJobStatusList();
         for(int i = 0; i < list.size(); i++) {
             Job job = list.get(i);
             Date lastExecuteDate = new Date(0);
-
             for(JobStatus jobStatus : jobStatusList) {
                 if(job.getName().equals(jobStatus.getJobName())) {
                     if (lastExecuteDate.before(jobStatus.getLogDate())) {
@@ -68,6 +69,17 @@ public class JobService {
                         job.setStatus(jobStatus.getStatusDesc());
                         list.set(i, job);
                     }
+                }
+            }
+        }
+        // get list job status running in scheduler manager
+        List<Job> activeJob = SchedulerManager.getInstance().getListJobs();
+        for(int i = 0; i < list.size(); i++) {
+            Job job = list.get(i);
+            for(Job jobStatus : activeJob) {
+                if(job.getName().equals(jobStatus.getName())) {
+                    job.setStatus("Running");
+                    list.set(i, job);
                 }
             }
         }
@@ -84,6 +96,7 @@ public class JobService {
     public static List<Job> advancedSearchJobs(String term, String status, Date fromDate, Date toDate, int schedulerType, int limit) {
         List<Job> list = new ArrayList<>();
         try {
+
             list = JobRepository.findJobs(term, status, fromDate, toDate, schedulerType, limit);
         }catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -191,8 +204,16 @@ public class JobService {
         return null;
     }
 
-    public static WebResult stopJob(String jobName) {
-        WebResult webResult = null;
+    public static WebResult stopJob(String jobName) throws Exception {
+        WebResult webResult = new WebResult();
+        Job job = new Job();
+        job.setName(jobName);
+
+        SchedulerManager schedulerManager = SchedulerManager.getInstance();
+        if (schedulerManager.isExists(job)) {
+            schedulerManager.removeJob(job);
+        }
+
         List<JobStatus> jobStatusList = getJobStatusList(jobName);
         for(JobStatus jobStatus: jobStatusList) {
             if("RUNNING".equals(jobStatus.getStatusDesc().toUpperCase()) && jobStatus.getId()!= null) {
@@ -211,8 +232,26 @@ public class JobService {
      * @param job
      * @return
      */
-    public static boolean updateJob(Job job) {
-        return JobRepository.updateJob(job);
+    public static void updateJob(Job job) throws Exception {
+        SchedulerManager schedulerManager = SchedulerManager.getInstance();
+        try {
+            if(schedulerManager.isExists(job)) {
+                throw new Exception("Update job failed, stop it first and try again!");
+            }
+            JobRepository.updateJobScheduler(job);
+        }catch (SchedulerException e) {
+            throw new SchedulerException(e.getMessage());
+        } catch (Exception e) {
+            throw new Exception(e.getMessage());
+        }
+    }
+
+    /**
+     *
+     * @return
+     */
+    public static List<Job> getListJobCronEnable() {
+        return JobRepository.getListJobCronEnable();
     }
 
 }

@@ -2,10 +2,13 @@ package vn.five9.data.repository;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import vn.five9.data.db.ConnectionProvider;
+import vn.five9.data.database.DatabaseMeta;
+import vn.five9.data.database.MySQLDatabase;
+import vn.five9.data.exception.DatabaseException;
 import vn.five9.data.model.Job;
 import vn.five9.data.model.JobStatus;
 import vn.five9.data.service.CarteService;
+import vn.five9.data.util.StringUtil;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -18,7 +21,11 @@ public class JobRepository {
     private static final Logger logger = LogManager.getLogger();
 
     /**
-     * get list of job
+     * get list of job paging
+     * @param limit
+     * @param offset
+     * @return
+     * @throws SQLException
      */
     public static List<Job> getJobs(int limit, int offset) throws SQLException {
         String query = "SELECT" +
@@ -29,15 +36,17 @@ public class JobRepository {
                 "        MODIFIED_DATE," +
                 "        CASE WHEN B.VALUE_NUM IS NULL THEN 0 ELSE B.VALUE_NUM END AS SCHEDULER_TYPE," +
                 "        CASE WHEN C.VALUE_STR IS NULL THEN 'N' ELSE C.VALUE_STR END AS IS_REPEAT," +
+                "        CASE WHEN J.CRON_ENABLE IS NULL THEN FALSE ELSE J.CRON_ENABLE END AS CRON_ENABLE," +
+                "        J.CRON_EXPRESSION, " +
+                "        J.CRON_START_DATE, " +
+                "        J.CRON_END_DATE," +
                 "        CASE WHEN D.VALUE_NUM IS NULL THEN 0 ELSE D.VALUE_NUM END AS INTERVAL_SECONDS," +
                 "        CASE WHEN E.VALUE_NUM IS NULL THEN 0 ELSE E.VALUE_NUM END AS INTERVAL_MINUTES," +
                 "        CASE WHEN F.VALUE_NUM IS NULL THEN 0 ELSE F.VALUE_NUM END AS HOUR," +
                 "        CASE WHEN G.VALUE_NUM IS NULL THEN 0 ELSE G.VALUE_NUM END AS MINUTES," +
                 "        CASE WHEN H.VALUE_NUM IS NULL THEN 0 ELSE H.VALUE_NUM END AS WEEK_DAY," +
                 "        CASE WHEN I.VALUE_NUM IS NULL THEN 0 ELSE I.VALUE_NUM END AS DAY_OF_MONTH " +
-                "FROM (" +
-                "                SELECT ID_JOB, NAME, DESCRIPTION, CREATED_DATE, MODIFIED_DATE FROM R_JOB" +
-                ") AS A " +
+                "FROM R_JOB AS A " +
                 "LEFT JOIN (" +
                 "        SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'schedulerType'" +
                 ") AS B ON  A.ID_JOB = B.ID_JOB " +
@@ -60,35 +69,45 @@ public class JobRepository {
                 "         SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'weekDay'" +
                 ") AS H ON  A.ID_JOB = H.ID_JOB " +
                 "LEFT JOIN (" +
-                "          SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'dayOfMonth'" +
+                "          SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'dayOfMonth' " +
                 ") AS I ON  A.ID_JOB = I.ID_JOB " +
+                "LEFT JOIN R_JOBENTRY_ATTRIBUTE_EXT AS J ON J.ID_JOB = A.ID_JOB " +
                 "LIMIT ? OFFSET ? ;";
 
-        Connection conn = ConnectionProvider.getConnection();
         List<Job> jobList = new ArrayList<>();
-        PreparedStatement pst = conn.prepareStatement(query);
-        pst.setInt(1, limit + 1);
-        pst.setInt(2, offset);
-        ResultSet rs = pst.executeQuery();
+        Connection conn = null;
+        try {
+            conn = MySQLDatabase.getInstance().getConnection();
+            PreparedStatement pst = conn.prepareStatement(query);
+            pst.setInt(1, limit + 1);
+            pst.setInt(2, offset);
+            ResultSet rs = pst.executeQuery();
 
-        while (rs.next()) {
-            Job job = new Job();
-            job.setID(rs.getInt("ID_JOB"));
-            job.setName(rs.getString("NAME"));
-            job.setDescription(rs.getString("DESCRIPTION"));
-            job.setCreatedDate(rs.getDate("CREATED_DATE"));
-            job.setModifiedDate(rs.getDate("MODIFIED_DATE"));
-            job.setIsRepeat(rs.getString("IS_REPEAT"));
-            job.setSchedulerType(rs.getInt("SCHEDULER_TYPE"));
-            job.setIntervalSeconds(rs.getInt("INTERVAL_SECONDS"));
-            job.setIntervalMinutes(rs.getInt("INTERVAL_MINUTES"));
-            job.setHours(rs.getInt("HOUR"));
-            job.setMinutes(rs.getInt("MINUTES"));
-            job.setWeekDay(rs.getInt("WEEK_DAY"));
-            job.setDayOfMonth(rs.getInt("DAY_OF_MONTH"));
-            jobList.add(job);
+            while (rs.next()) {
+                Job job = new Job();
+                job.setID(rs.getInt(DatabaseMeta.FIELD_JOB_ID));
+                job.setName(rs.getString(DatabaseMeta.FIELD_JOB_NAME));
+                job.setDescription(rs.getString(DatabaseMeta.FIELD_JOB_DESCRIPTION));
+                job.setCreatedDate(rs.getDate(DatabaseMeta.FIELD_JOB_CREATED_DATE));
+                job.setModifiedDate(rs.getDate(DatabaseMeta.FIELD_JOB_MODIFIED_DATE));
+                job.setIsRepeat(rs.getString(DatabaseMeta.FIELD_JOB_IS_REPEAT));
+                job.setCronEnable(rs.getBoolean(DatabaseMeta.FIELD_JOB_CRON_ENABLE));
+                job.setCron(StringUtil.deEscapeSQL(rs.getString(DatabaseMeta.FIELD_JOB_CRON_EXPRESSION)));
+                job.setCronStartDate(rs.getDate(DatabaseMeta.FIELD_JOB_CRON_START_DATE));
+                job.setCronEndDate(rs.getDate(DatabaseMeta.FIELD_JOB_CRON_END_DATE));
+                job.setSchedulerType(rs.getInt(DatabaseMeta.FIELD_JOB_SCHEDULER_TYPE));
+                job.setIntervalSeconds(rs.getInt(DatabaseMeta.FIELD_JOB_INTERVAL_SECONDS));
+                job.setIntervalMinutes(rs.getInt(DatabaseMeta.FIELD_JOB_INTERVAL_MINUTES));
+                job.setHours(rs.getInt(DatabaseMeta.FIELD_JOB_HOUR));
+                job.setMinutes(rs.getInt(DatabaseMeta.FIELD_JOB_MINUTES));
+                job.setWeekDay(rs.getInt(DatabaseMeta.FIELD_JOB_WEEK_DAY));
+                job.setDayOfMonth(rs.getInt(DatabaseMeta.FIELD_JOB_DAY_OF_MONTH));
+                jobList.add(job);
+            }
+            conn.close();
+        }catch (SQLException e) {
+            throw new SQLException(e.getMessage(), e);
         }
-        conn.close();
         return jobList;
     }
 
@@ -107,15 +126,17 @@ public class JobRepository {
                 "        MODIFIED_DATE," +
                 "        CASE WHEN B.VALUE_NUM IS NULL THEN 0 ELSE B.VALUE_NUM END AS SCHEDULER_TYPE," +
                 "        CASE WHEN C.VALUE_STR IS NULL THEN 'N' ELSE C.VALUE_STR END AS IS_REPEAT," +
+                "        CASE WHEN J.CRON_ENABLE IS NULL THEN FALSE ELSE J.CRON_ENABLE END AS CRON_ENABLE," +
+                "        J.CRON_EXPRESSION, " +
+                "        J.CRON_START_DATE, " +
+                "        J.CRON_END_DATE," +
                 "        CASE WHEN D.VALUE_NUM IS NULL THEN 0 ELSE D.VALUE_NUM END AS INTERVAL_SECONDS," +
                 "        CASE WHEN E.VALUE_NUM  IS NULL THEN 0 ELSE E.VALUE_NUM END AS INTERVAL_MINUTES," +
                 "        CASE WHEN F.VALUE_NUM  IS NULL THEN 0 ELSE F.VALUE_NUM END AS HOUR," +
                 "        CASE WHEN G.VALUE_NUM IS NULL THEN 0 ELSE G.VALUE_NUM END AS MINUTES," +
                 "        CASE WHEN H.VALUE_NUM IS NULL THEN 0 ELSE H.VALUE_NUM END AS WEEK_DAY," +
                 "        CASE WHEN I.VALUE_NUM IS NULL THEN 0 ELSE I.VALUE_NUM END AS DAY_OF_MONTH " +
-                "FROM (" +
-                "     SELECT ID_JOB, NAME, DESCRIPTION, CREATED_DATE, MODIFIED_DATE FROM R_JOB" +
-                ") AS A " +
+                "FROM R_JOB A " +
                 "LEFT JOIN (" +
                 "     SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'schedulerType'" +
                 ") AS B ON  A.ID_JOB = B.ID_JOB " +
@@ -140,9 +161,10 @@ public class JobRepository {
                 "LEFT JOIN (" +
                 "    SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'dayOfMonth'" +
                 ") AS I ON  A.ID_JOB = I.ID_JOB " +
+                "LEFT JOIN R_JOBENTRY_ATTRIBUTE_EXT AS J ON J.ID_JOB = A.ID_JOB " +
                 "WHERE 1=1 ");
 
-        Connection conn = ConnectionProvider.getConnection();
+        Connection conn = MySQLDatabase.getInstance().getConnection();
         PreparedStatement pst = null;
         if (status.equals("")) {
             if (!term.equals("")) {
@@ -249,19 +271,23 @@ public class JobRepository {
         ResultSet rs = pst.executeQuery();
         while (rs.next()) {
             Job job = new Job();
-            job.setID(rs.getInt("ID_JOB"));
-            job.setName(rs.getString("NAME"));
-            job.setDescription(rs.getString("DESCRIPTION"));
-            job.setCreatedDate(rs.getDate("CREATED_DATE"));
-            job.setModifiedDate(rs.getDate("MODIFIED_DATE"));
-            job.setIsRepeat(rs.getString("IS_REPEAT"));
-            job.setSchedulerType(rs.getInt("SCHEDULER_TYPE"));
-            job.setIntervalSeconds(rs.getInt("INTERVAL_SECONDS"));
-            job.setIntervalMinutes(rs.getInt("INTERVAL_MINUTES"));
-            job.setHours(rs.getInt("HOUR"));
-            job.setMinutes(rs.getInt("MINUTES"));
-            job.setWeekDay(rs.getInt("WEEK_DAY"));
-            job.setDayOfMonth(rs.getInt("DAY_OF_MONTH"));
+            job.setID(rs.getInt(DatabaseMeta.FIELD_JOB_ID));
+            job.setName(rs.getString(DatabaseMeta.FIELD_JOB_NAME));
+            job.setDescription(rs.getString(DatabaseMeta.FIELD_JOB_DESCRIPTION));
+            job.setCreatedDate(rs.getDate(DatabaseMeta.FIELD_JOB_CREATED_DATE));
+            job.setModifiedDate(rs.getDate(DatabaseMeta.FIELD_JOB_MODIFIED_DATE));
+            job.setIsRepeat(rs.getString(DatabaseMeta.FIELD_JOB_IS_REPEAT));
+            job.setCronEnable(rs.getBoolean(DatabaseMeta.FIELD_JOB_CRON_ENABLE));
+            job.setCron(StringUtil.deEscapeSQL(rs.getString(DatabaseMeta.FIELD_JOB_CRON_EXPRESSION)));
+            job.setCronStartDate(rs.getDate(DatabaseMeta.FIELD_JOB_CRON_START_DATE));
+            job.setCronEndDate(rs.getDate(DatabaseMeta.FIELD_JOB_CRON_END_DATE));
+            job.setSchedulerType(rs.getInt(DatabaseMeta.FIELD_JOB_SCHEDULER_TYPE));
+            job.setIntervalSeconds(rs.getInt(DatabaseMeta.FIELD_JOB_INTERVAL_SECONDS));
+            job.setIntervalMinutes(rs.getInt(DatabaseMeta.FIELD_JOB_INTERVAL_MINUTES));
+            job.setHours(rs.getInt(DatabaseMeta.FIELD_JOB_HOUR));
+            job.setMinutes(rs.getInt(DatabaseMeta.FIELD_JOB_MINUTES));
+            job.setWeekDay(rs.getInt(DatabaseMeta.FIELD_JOB_WEEK_DAY));
+            job.setDayOfMonth(rs.getInt(DatabaseMeta.FIELD_JOB_DAY_OF_MONTH));
             if(!status.equals("")) {
                 job.setStatus(status);
             }
@@ -278,9 +304,10 @@ public class JobRepository {
      * @param job
      * @return
      */
-    public static boolean updateJob(Job job) {
+    public static void updateJobScheduler(Job job) throws DatabaseException {
+        Connection conn = null;
         try {
-            Connection conn = ConnectionProvider.getConnection();
+            conn = MySQLDatabase.getInstance().getConnection();
             conn.setAutoCommit(false);
             Statement stmt = conn.createStatement();
 
@@ -290,7 +317,32 @@ public class JobRepository {
 
             if (job.getSchedulerType() == 0) {  //no need to update other, this is no scheduler
                 stmt.addBatch(getSQLQuery(0, job.getID(), "schedulerType"));
+                if(job.isCronEnable()) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("UPDATE R_JOBENTRY_ATTRIBUTE_EXT SET CRON_EXPRESSION =? AND CRON_ENABLE = true ");
+                    if (job.getCronStartDate()!= null) {
+                        sb.append("AND CRON_START_DATE=? ");
+                    }
+                    if (job.getCronEndDate() != null) {
+                        sb.append("AND CRON_END_DATE=? ");
+                    }
+                    sb.append("WHERE ID_JOB=?");
 
+                    PreparedStatement pst = conn.prepareStatement(sb.toString());
+                    int i = 1;
+                    pst.setString(i, StringUtil.escapeSQL(job.getCron()));
+                    i++;
+                    if (job.getCronStartDate()!= null) {
+                        pst.setDate(i, new java.sql.Date(job.getCronStartDate().getTime()));
+                        i++;
+                    }
+                    if (job.getCronEndDate() != null) {
+                        pst.setDate(i, new java.sql.Date(job.getCronEndDate().getTime()));
+                        i++;
+                    }
+                    pst.setInt(i, job.getID());
+                    pst.executeUpdate();
+                }
             } else if (job.getSchedulerType() == 1) {   //interval (update intervalSeconds and intervalMinutes)
                 stmt.addBatch(getSQLQuery(1, job.getID(), "schedulerType"));
                 stmt.addBatch(getSQLQuery(job.getIntervalMinutes(), job.getID(), "intervalMinutes"));
@@ -313,14 +365,21 @@ public class JobRepository {
                 stmt.addBatch(getSQLQuery(job.getMinutes(), job.getID(), "minutes"));
                 stmt.addBatch(getSQLQuery(job.getDayOfMonth(), job.getID(), "dayOfMonth"));
             }
+
             stmt.executeBatch();
             conn.commit();
-            conn.close();
-            return true;
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
+            throw new DatabaseException(e.getMessage());
+        } finally {
+            if(conn!= null) {
+                try {
+                    conn.close();
+                }catch (Exception e) {
+                    //pass
+                }
+            }
         }
-        return false;
     }
 
     /**
@@ -333,5 +392,50 @@ public class JobRepository {
      */
     private static String getSQLQuery(int valueNum, int jobId, String code) {
         return "UPDATE R_JOBENTRY_ATTRIBUTE SET VALUE_NUM =" + valueNum + " WHERE ID_JOB= " + jobId + " AND CODE = '" + code + "'";
+    }
+
+    /**
+     *
+     * @return
+     *  list job enable cron scheduler
+     */
+    public static List<Job> getListJobCronEnable() {
+        String sql = "SELECT " +
+                "   A.ID_JOB," +
+                " NAME," +
+                " CASE WHEN J.CRON_ENABLE IS NULL THEN FALSE ELSE J.CRON_ENABLE END AS CRON_ENABLE, " +
+                " J.CRON_EXPRESSION, " +
+                " J.CRON_START_DATE, " +
+                " J.CRON_END_DATE " +
+                "FROM R_JOB AS A " +
+                "LEFT JOIN R_JOBENTRY_ATTRIBUTE_EXT AS J ON J.ID_JOB = A.ID_JOB " +
+                "WHERE CRON_ENABLE = true";
+        List<Job> jobList = new ArrayList<>();
+        Connection conn = MySQLDatabase.getInstance().getConnection();
+        try {
+            PreparedStatement pst = conn.prepareStatement(sql);
+            ResultSet rs = pst.executeQuery();
+            while (rs.next()) {
+                Job job = new Job();
+                job.setID(rs.getInt(DatabaseMeta.FIELD_JOB_ID));
+                job.setName(rs.getString(DatabaseMeta.FIELD_JOB_NAME));
+                job.setCronEnable(rs.getBoolean(DatabaseMeta.FIELD_JOB_CRON_ENABLE));
+                job.setCron(StringUtil.deEscapeSQL(rs.getString(DatabaseMeta.FIELD_JOB_CRON_EXPRESSION)));
+                job.setCronStartDate(rs.getDate(DatabaseMeta.FIELD_JOB_CRON_START_DATE));
+                job.setCronEndDate(rs.getDate(DatabaseMeta.FIELD_JOB_CRON_END_DATE));
+                jobList.add(job);
+            }
+        }catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        } finally {
+            if(conn!=null) {
+                try {
+                    conn.close();
+                }catch (Exception e){
+                    // pass
+                }
+            }
+        }
+        return jobList;
     }
 }

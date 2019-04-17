@@ -25,15 +25,16 @@ public class JobController {
 
     @PostMapping("/api/v1/job")
     public ResponseData updateJob(@RequestBody Job job) {
-        System.out.println(job.toString());
+        logger.info(job);
         ResponseData responseData = new ResponseData();
-        boolean status = JobService.updateJob(job);
-        if(status) {
+        try {
+            JobService.updateJob(job);
             responseData.setStatus(1);
             responseData.setMessage("Job has been updated");
-        } else {
+        } catch (Exception e) {
             responseData.setStatus(-1);
-            responseData.setMessage("Failed to update job");
+            responseData.setMessage(e.getMessage());
+            logger.error(e.getMessage(), e);
         }
         return responseData;
     }

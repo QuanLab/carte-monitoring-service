@@ -1,5 +1,7 @@
 package vn.five9.data.service;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import vn.five9.data.config.Config;
 import vn.five9.data.model.JobStatus;
 import vn.five9.data.model.ServerStatus;
@@ -18,6 +20,8 @@ import java.util.stream.Collectors;
  */
 public class CarteService {
 
+    private static final Logger logger  = LogManager.getLogger();
+
     /**
      * Get server status from Carte server
      * @return
@@ -31,7 +35,7 @@ public class CarteService {
             Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
             serverStatus = (ServerStatus)unmarshaller.unmarshal(new StringReader(message));
         }catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         return serverStatus;
     }

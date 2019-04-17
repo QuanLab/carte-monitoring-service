@@ -30,6 +30,18 @@ public class Job {
     @JsonProperty("is_repeat")
     private String isRepeat;
 
+    @JsonProperty("cron_enable")
+    private boolean cronEnable;
+
+    @JsonProperty("cron")
+    private String cron;
+
+    @JsonProperty("cron_start")
+    private Date cronStartDate;
+
+    @JsonProperty("cron_end")
+    private Date cronEndDate;
+
     @JsonProperty("interval_seconds")
     private int intervalSeconds;
 
@@ -111,6 +123,38 @@ public class Job {
         this.isRepeat = isRepeat;
     }
 
+    public boolean isCronEnable() {
+        return cronEnable;
+    }
+
+    public void setCronEnable(boolean cronEnable) {
+        this.cronEnable = cronEnable;
+    }
+
+    public String getCron() {
+        return cron;
+    }
+
+    public void setCron(String cron) {
+        this.cron = cron;
+    }
+
+    public Date getCronStartDate() {
+        return cronStartDate;
+    }
+
+    public void setCronStartDate(Date cronStartDate) {
+        this.cronStartDate = cronStartDate;
+    }
+
+    public Date getCronEndDate() {
+        return cronEndDate;
+    }
+
+    public void setCronEndDate(Date cronEndDate) {
+        this.cronEndDate = cronEndDate;
+    }
+
     public int getIntervalSeconds() {
         return intervalSeconds;
     }
@@ -177,6 +221,10 @@ public class Job {
                 ", modifiedDate=" + modifiedDate +
                 ", schedulerType=" + schedulerType +
                 ", isRepeat='" + isRepeat + '\'' +
+                ", cronEnable=" + cronEnable +
+                ", cron='" + cron + '\'' +
+                ", cronStartDate=" + cronStartDate +
+                ", cronEndDate=" + cronEndDate +
                 ", intervalSeconds=" + intervalSeconds +
                 ", intervalMinutes=" + intervalMinutes +
                 ", hours=" + hours +
