@@ -73,16 +73,18 @@ public class JobService {
             }
         }
         // get list job status running in scheduler manager
-        List<Job> activeJob = SchedulerManager.getInstance().getListJobs();
-        for(int i = 0; i < list.size(); i++) {
-            Job job = list.get(i);
-            for(Job jobStatus : activeJob) {
-                if(job.getName().equals(jobStatus.getName())) {
-                    job.setStatus("Running");
-                    list.set(i, job);
-                }
-            }
-        }
+        // ignore because schedule manager only persit metadata about the job, exacly job running on Carte server
+        // segment of code will be un-comment when running job in this API
+//        List<Job> activeJob = SchedulerManager.getInstance().getListJobs();
+//        for(int i = 0; i < list.size(); i++) {
+//            Job job = list.get(i);
+//            for(Job jobStatus : activeJob) {
+//                if(job.getName().equals(jobStatus.getName())) {
+//                    job.setStatus("Running");
+//                    list.set(i, job);
+//                }
+//            }
+//        }
         return list;
     }
 
@@ -96,7 +98,6 @@ public class JobService {
     public static List<Job> advancedSearchJobs(String term, String status, Date fromDate, Date toDate, int schedulerType, int limit) {
         List<Job> list = new ArrayList<>();
         try {
-
             list = JobRepository.findJobs(term, status, fromDate, toDate, schedulerType, limit);
         }catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -204,6 +205,12 @@ public class JobService {
         return null;
     }
 
+    /**
+     *
+     * @param jobName
+     * @return
+     * @throws Exception
+     */
     public static WebResult stopJob(String jobName) throws Exception {
         WebResult webResult = new WebResult();
         Job job = new Job();
@@ -233,17 +240,7 @@ public class JobService {
      * @return
      */
     public static void updateJob(Job job) throws Exception {
-        SchedulerManager schedulerManager = SchedulerManager.getInstance();
-        try {
-            if(schedulerManager.isExists(job)) {
-                throw new Exception("Update job failed, stop it first and try again!");
-            }
-            JobRepository.updateJobScheduler(job);
-        }catch (SchedulerException e) {
-            throw new SchedulerException(e.getMessage());
-        } catch (Exception e) {
-            throw new Exception(e.getMessage());
-        }
+        JobRepository.updateJobScheduler(job);
     }
 
     /**

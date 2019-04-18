@@ -77,20 +77,30 @@ public class JobController {
     }
 
     @PostMapping("/api/v1/startJob")
-    public ResponseData startJob(@RequestParam(value="name", defaultValue="") String jobName,
-                                 @RequestBody JobInstance jobInstance) {
+    public ResponseData startJob(@RequestBody JobInstance jobInstance) {
 
         logger.info(jobInstance.toString());
+
+        ResponseData responseData = new ResponseData();
+        WebResult webResult = JobService.startJob(jobInstance.getName(), jobInstance.getInstanceId());
+        logger.info(webResult);
+
+        if("OK".equals(webResult.getResult())) {
+            responseData.setStatus(1);
+            responseData.setMessage("Job " + jobInstance.getName() + " started success");
+        } else {
+            responseData.setStatus(-1);
+            responseData.setMessage(webResult.getMessage());
+        }
+        return responseData;
+    }
+
+    @RequestMapping("/api/v1/startJob")
+    public ResponseData startJob(@RequestParam(value="name", defaultValue="") String jobName) {
         logger.info("jobName " + jobName);
 
         ResponseData responseData = new ResponseData();
-        WebResult webResult;
-
-        if(jobInstance.getInstanceId()!= null) {
-            webResult = JobService.startJob(jobInstance.getName(), jobInstance.getInstanceId());
-        } else {
-            webResult = JobService.startJob(jobName, null);
-        }
+        WebResult  webResult = JobService.startJob(jobName, null);
         logger.info(webResult);
 
         if("OK".equals(webResult.getResult())) {
@@ -104,17 +114,27 @@ public class JobController {
     }
 
     @PostMapping("/api/v1/stopJob")
+    public ResponseData stopJob(@RequestBody JobInstance jobInstance) {
+        ResponseData responseData = new ResponseData();
+        logger.info(jobInstance.toString());
+        WebResult webResult = JobService.stopJob(jobInstance.getName(), jobInstance.getInstanceId());
+        logger.info(webResult);
+        if("OK".equals(webResult.getResult())) {
+            responseData.setStatus(1);
+            responseData.setMessage("Job " + jobInstance.getName() + " stopped success");
+        } else {
+            responseData.setStatus(-1);
+            responseData.setMessage(webResult.getMessage());
+        }
+        return responseData;
+    }
+
+    @RequestMapping("/api/v1/stopJob")
     public ResponseData stopJob(@RequestParam(value="name", defaultValue="") String jobName,
-                              @RequestParam(value="instanceId", defaultValue="") String instanceId,
-                                @RequestBody JobInstance jobInstance) {
+                                @RequestParam(value="instanceId", defaultValue="") String instanceId) {
         ResponseData responseData = new ResponseData();
         logger.info("jobName " + jobName + "\tinstanceId\t" + instanceId);
-        WebResult webResult;
-        if (jobInstance.getInstanceId()!= null) {
-            webResult = JobService.stopJob(jobName, instanceId);
-        } else {
-            webResult = JobService.stopJob(jobInstance.getName(), jobInstance.getInstanceId());
-        }
+        WebResult webResult = JobService.stopJob(jobName, instanceId);
         logger.info(webResult);
         if("OK".equals(webResult.getResult())) {
             responseData.setStatus(1);

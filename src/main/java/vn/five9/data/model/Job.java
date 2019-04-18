@@ -212,6 +212,15 @@ public class Job {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if(obj.getClass().equals(Job.class)) {
+            Job other = (Job) obj;
+            return this.getID() == other.getID();
+        }
+        return true;
+    }
+
+    @Override
     public String toString() {
         return "Job{" +
                 "ID=" + ID +

@@ -22,6 +22,7 @@ public class JobRepository {
 
     /**
      * get list of job paging
+     *
      * @param limit
      * @param offset
      * @return
@@ -92,7 +93,7 @@ public class JobRepository {
                 job.setModifiedDate(rs.getDate(DatabaseMeta.FIELD_JOB_MODIFIED_DATE));
                 job.setIsRepeat(rs.getString(DatabaseMeta.FIELD_JOB_IS_REPEAT));
                 job.setCronEnable(rs.getBoolean(DatabaseMeta.FIELD_JOB_CRON_ENABLE));
-                job.setCron(StringUtil.deEscapeSQL(rs.getString(DatabaseMeta.FIELD_JOB_CRON_EXPRESSION)));
+                job.setCron(rs.getString(DatabaseMeta.FIELD_JOB_CRON_EXPRESSION));
                 job.setCronStartDate(rs.getDate(DatabaseMeta.FIELD_JOB_CRON_START_DATE));
                 job.setCronEndDate(rs.getDate(DatabaseMeta.FIELD_JOB_CRON_END_DATE));
                 job.setSchedulerType(rs.getInt(DatabaseMeta.FIELD_JOB_SCHEDULER_TYPE));
@@ -105,7 +106,7 @@ public class JobRepository {
                 jobList.add(job);
             }
             conn.close();
-        }catch (SQLException e) {
+        } catch (SQLException e) {
             throw new SQLException(e.getMessage(), e);
         }
         return jobList;
@@ -117,7 +118,7 @@ public class JobRepository {
     public static List<Job> findJobs(String term, String status, Date fromDate, Date toDate, int schedulerType, int limit)
             throws SQLException, NullPointerException {
         List<Job> jobList = new ArrayList<>();
-        StringBuilder query =  new StringBuilder();
+        StringBuilder query = new StringBuilder();
         query.append("SELECT" +
                 "        A.ID_JOB," +
                 "        NAME," +
@@ -171,20 +172,20 @@ public class JobRepository {
                 query.append("AND (A.NAME LIKE ? OR A.DESCRIPTION LIKE ?) ");
             }
             if (fromDate != null) {
-                if(toDate != null) {
+                if (toDate != null) {
                     query.append("AND A.CREATED_DATE BETWEEN ? AND ?");
                 } else {
                     query.append("AND A.CREATED_DATE >= ? ");
                 }
             } else {
-                if(toDate != null) {
+                if (toDate != null) {
                     query.append("AND A.CREATED_DATE <= ? ");
                 }
             }
             if (schedulerType != -1) {
                 query.append("AND B.VALUE_NUM =? ");
             }
-            query.append( "LIMIT ?;");
+            query.append("LIMIT ?;");
 
             logger.info(query.toString());
             pst = conn.prepareStatement(query.toString());
@@ -198,7 +199,7 @@ public class JobRepository {
             }
 
             if (fromDate != null) {
-                if(toDate != null) {
+                if (toDate != null) {
                     pst.setDate(index, new java.sql.Date(fromDate.getTime()));
                     index++;
                     pst.setDate(index, new java.sql.Date(toDate.getTime()));
@@ -208,7 +209,7 @@ public class JobRepository {
                     index++;
                 }
             } else {
-                if(toDate != null) {
+                if (toDate != null) {
                     pst.setDate(index, new java.sql.Date(toDate.getTime()));
                     index++;
                 }
@@ -235,7 +236,7 @@ public class JobRepository {
 
             if (jobNameList.size() > 0) {
                 query.append("AND A.NAME IN ( ");
-                for (int i =0; i < jobNameList.size(); i++) {
+                for (int i = 0; i < jobNameList.size(); i++) {
                     query.append("?, ");
                 }
                 query.append(" '')");
@@ -248,11 +249,11 @@ public class JobRepository {
                 System.out.println(jobNameList);
                 pst = conn.prepareStatement(query.toString());
                 int index = 1;
-                if(!term.equals("")) {
+                if (!term.equals("")) {
                     pst.setString(index, "%" + term + "%");
-                    index ++;
+                    index++;
                     pst.setString(index, "%" + term + "%");
-                    index ++;
+                    index++;
                 }
                 for (String name : jobNameList) {
                     pst.setString(index, name);
@@ -288,7 +289,7 @@ public class JobRepository {
             job.setMinutes(rs.getInt(DatabaseMeta.FIELD_JOB_MINUTES));
             job.setWeekDay(rs.getInt(DatabaseMeta.FIELD_JOB_WEEK_DAY));
             job.setDayOfMonth(rs.getInt(DatabaseMeta.FIELD_JOB_DAY_OF_MONTH));
-            if(!status.equals("")) {
+            if (!status.equals("")) {
                 job.setStatus(status);
             }
             jobList.add(job);
@@ -317,22 +318,22 @@ public class JobRepository {
 
             if (job.getSchedulerType() == 0) {  //no need to update other, this is no scheduler
                 stmt.addBatch(getSQLQuery(0, job.getID(), "schedulerType"));
-                if(job.isCronEnable()) {
+                if (job.isCronEnable()) {
                     StringBuilder sb = new StringBuilder();
-                    sb.append("UPDATE R_JOBENTRY_ATTRIBUTE_EXT SET CRON_EXPRESSION =? AND CRON_ENABLE = true ");
-                    if (job.getCronStartDate()!= null) {
-                        sb.append("AND CRON_START_DATE=? ");
+                    sb.append("UPDATE R_JOBENTRY_ATTRIBUTE_EXT SET CRON_EXPRESSION =?, CRON_ENABLE = true ");
+                    if (job.getCronStartDate() != null) {
+                        sb.append(", CRON_START_DATE=? ");
                     }
                     if (job.getCronEndDate() != null) {
-                        sb.append("AND CRON_END_DATE=? ");
+                        sb.append(", CRON_END_DATE=? ");
                     }
                     sb.append("WHERE ID_JOB=?");
 
                     PreparedStatement pst = conn.prepareStatement(sb.toString());
                     int i = 1;
-                    pst.setString(i, StringUtil.escapeSQL(job.getCron()));
+                    pst.setString(i, job.getCron());
                     i++;
-                    if (job.getCronStartDate()!= null) {
+                    if (job.getCronStartDate() != null) {
                         pst.setDate(i, new java.sql.Date(job.getCronStartDate().getTime()));
                         i++;
                     }
@@ -372,10 +373,10 @@ public class JobRepository {
             logger.error(e.getMessage(), e);
             throw new DatabaseException(e.getMessage());
         } finally {
-            if(conn!= null) {
+            if (conn != null) {
                 try {
                     conn.close();
-                }catch (Exception e) {
+                } catch (Exception e) {
                     //pass
                 }
             }
@@ -395,9 +396,7 @@ public class JobRepository {
     }
 
     /**
-     *
-     * @return
-     *  list job enable cron scheduler
+     * @return list job enable cron scheduler
      */
     public static List<Job> getListJobCronEnable() {
         String sql = "SELECT " +
@@ -420,18 +419,18 @@ public class JobRepository {
                 job.setID(rs.getInt(DatabaseMeta.FIELD_JOB_ID));
                 job.setName(rs.getString(DatabaseMeta.FIELD_JOB_NAME));
                 job.setCronEnable(rs.getBoolean(DatabaseMeta.FIELD_JOB_CRON_ENABLE));
-                job.setCron(StringUtil.deEscapeSQL(rs.getString(DatabaseMeta.FIELD_JOB_CRON_EXPRESSION)));
+                job.setCron(rs.getString(DatabaseMeta.FIELD_JOB_CRON_EXPRESSION));
                 job.setCronStartDate(rs.getDate(DatabaseMeta.FIELD_JOB_CRON_START_DATE));
                 job.setCronEndDate(rs.getDate(DatabaseMeta.FIELD_JOB_CRON_END_DATE));
                 jobList.add(job);
             }
-        }catch (Exception e) {
+        } catch (Exception e) {
             logger.error(e.getMessage(), e);
         } finally {
-            if(conn!=null) {
+            if (conn != null) {
                 try {
                     conn.close();
-                }catch (Exception e){
+                } catch (Exception e) {
                     // pass
                 }
             }

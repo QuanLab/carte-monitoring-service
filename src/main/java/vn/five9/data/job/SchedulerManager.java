@@ -24,7 +24,7 @@ public class SchedulerManager {
     private SchedulerManager() {
         try {
             init();
-        }catch (Exception e) {
+        } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
     }
@@ -38,6 +38,7 @@ public class SchedulerManager {
 
     /**
      * init scheduler
+     *
      * @throws SchedulerException
      */
     private void init() throws SchedulerException {
@@ -46,11 +47,12 @@ public class SchedulerManager {
 
     /**
      * add new scheduler for job if not exist, otherwise update it
+     *
      * @param job
      */
     public void addJob(Job job) throws SchedulerException {
         JobKey jobKey = new JobKey(job.getName());
-        if(scheduler.checkExists(jobKey)) {
+        if (scheduler.checkExists(jobKey)) {
             return;
         }
         JobDetail job1 = JobBuilder.newJob(PentahoJob.class)
@@ -69,38 +71,55 @@ public class SchedulerManager {
         if (job.getCronEndDate() != null) {
             triggerBuilder.endAt(job.getCronEndDate());
         }
-
-        Trigger trigger1 = triggerBuilder.build();
-        scheduler.scheduleJob(job1, trigger1);
+        Trigger trigger = triggerBuilder.build();
+        scheduler.scheduleJob(job1, trigger);
     }
 
 
     /**
      * check if job is exists in scheduler
+     *
      * @param job
      * @return
      * @throws SchedulerException
-     *
      */
     public boolean isExists(Job job) throws SchedulerException {
         JobKey jobKey = new JobKey(job.getName());
         return scheduler.checkExists(jobKey);
     }
 
+
     /**
-     *  remove job from scheduler
+     *
+     * @param job
+     * @return
+     * @throws SchedulerException
+     */
+    public boolean isRunning(Job job) throws SchedulerException {
+        List<JobExecutionContext> currentJobs = scheduler.getCurrentlyExecutingJobs();
+        for (JobExecutionContext jobCtx : currentJobs) {
+            String thisJobName = jobCtx.getJobDetail().getKey().getName();
+            if (job.getName().equalsIgnoreCase(thisJobName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * remove job from scheduler
+     *
      * @param job
      * @throws SchedulerException
      */
     public void removeJob(Job job) throws SchedulerException {
         JobKey jobKey = new JobKey(job.getName());
-        if(scheduler.checkExists(jobKey)) {
+        if (scheduler.checkExists(jobKey)) {
             scheduler.deleteJob(jobKey);
         }
     }
 
     /**
-     *
      * @throws SchedulerException
      */
     public void start() throws SchedulerException {
@@ -108,7 +127,6 @@ public class SchedulerManager {
     }
 
     /**
-     *
      * @return
      * @throws SchedulerException
      */
@@ -117,17 +135,18 @@ public class SchedulerManager {
     }
 
     /**
-     *
      * @return
      * @throws SchedulerException
      */
     public List<Job> getListJobs() throws SchedulerException {
         List<Job> jobList = new ArrayList<>();
-        for(JobKey jobKey : scheduler.getJobKeys(GroupMatcher.anyGroup())) {
+        for (JobKey jobKey : scheduler.getJobKeys(GroupMatcher.anyGroup())) {
             Job job = new Job();
             job.setName(jobKey.getName());
             jobList.add(job);
         }
         return jobList;
     }
+
+
 }
