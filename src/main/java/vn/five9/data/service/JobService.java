@@ -233,7 +233,6 @@ public class JobService {
         return webResult;
     }
 
-
     /**
      * update Job Scheduler
      * @param job
@@ -250,5 +249,15 @@ public class JobService {
     public static List<Job> getListJobCronEnable() {
         return JobRepository.getListJobCronEnable();
     }
+
+
+    /**
+     *
+     * @return
+     */
+    public static Map<String, Job> getMapJobCronEnable() {
+        return JobRepository.getMapJobCronEnable();
+    }
+
 
 }

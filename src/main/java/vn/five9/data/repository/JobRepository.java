@@ -11,9 +11,8 @@ import vn.five9.data.service.CarteService;
 import vn.five9.data.util.StringUtil;
 
 import java.sql.*;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.Date;
-import java.util.List;
 
 
 public class JobRepository {
@@ -436,5 +435,50 @@ public class JobRepository {
             }
         }
         return jobList;
+    }
+
+
+    /**
+     * @return list job enable cron scheduler
+     */
+    public static Map<String, Job> getMapJobCronEnable() {
+        String sql = "SELECT " +
+                "   A.ID_JOB," +
+                " NAME," +
+                " CASE WHEN J.CRON_ENABLE IS NULL THEN FALSE ELSE J.CRON_ENABLE END AS CRON_ENABLE, " +
+                " J.CRON_EXPRESSION, " +
+                " J.CRON_START_DATE, " +
+                " J.CRON_END_DATE " +
+                "FROM R_JOB AS A " +
+                "LEFT JOIN R_JOBENTRY_ATTRIBUTE_EXT AS J ON J.ID_JOB = A.ID_JOB " +
+                "WHERE CRON_ENABLE = true";
+        Map<String, Job> jobMap = new HashMap<>();
+        Connection conn = MySQLDatabase.getInstance().getConnection();
+        try {
+            PreparedStatement pst = conn.prepareStatement(sql);
+            ResultSet rs = pst.executeQuery();
+            while (rs.next()) {
+                Job job = new Job();
+                job.setID(rs.getInt(DatabaseMeta.FIELD_JOB_ID));
+                job.setName(rs.getString(DatabaseMeta.FIELD_JOB_NAME));
+                job.setCronEnable(rs.getBoolean(DatabaseMeta.FIELD_JOB_CRON_ENABLE));
+                job.setCron(rs.getString(DatabaseMeta.FIELD_JOB_CRON_EXPRESSION));
+                job.setCronStartDate(rs.getTimestamp(DatabaseMeta.FIELD_JOB_CRON_START_DATE));
+                job.setCronEndDate(rs.getTimestamp(DatabaseMeta.FIELD_JOB_CRON_END_DATE));
+                jobMap.put(job.getName(), job);
+            }
+            pst.close();
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (Exception e) {
+                    // pass
+                }
+            }
+        }
+        return jobMap;
     }
 }

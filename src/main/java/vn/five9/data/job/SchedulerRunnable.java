@@ -5,24 +5,24 @@ import org.apache.logging.log4j.Logger;
 import vn.five9.data.model.Job;
 import vn.five9.data.service.JobService;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
+
 
 public class SchedulerRunnable implements Runnable {
 
     private static final Logger logger = LogManager.getLogger();
     private SchedulerManager schedulerManager;
-    private static List<Job> jobCronEnableOld;
+    private static Map<String, Job> jobMapCronEnableOld;
 
     public SchedulerRunnable() {
         schedulerManager = SchedulerManager.getInstance();
         try {
             if (!schedulerManager.isStarted()) {
                 schedulerManager.start();
+                jobMapCronEnableOld = new HashMap<>();
             }
-            jobCronEnableOld = new ArrayList<>();
-        }catch (Exception e) {
+        } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
     }
@@ -31,30 +31,77 @@ public class SchedulerRunnable implements Runnable {
     @Override
     public void run() {
         try {
-            List<Job> jobCronEnable = JobService.getListJobCronEnable();
+            Map<String, Job> jobMapCronNew = JobService.getMapJobCronEnable();
 
-            logger.info(jobCronEnableOld.size());
-            List<Job> jobToRemove = jobCronEnableOld.stream().filter(job -> !jobCronEnable.contains(job))
-                    .collect(Collectors.toList());
-            for(Job job : jobToRemove) {
-                logger.info("Remove job from scheduler " + job.getName());
-                schedulerManager.removeJob(job);
-            }
-
-            for(Job job : jobCronEnable) {
-                int index = jobCronEnableOld.indexOf(job);
-                if(index == -1) {
-                    continue;
-                }
-                Job oldJob = jobCronEnableOld.get(index);
-                logger.info(jobCronEnableOld.indexOf(job));
-                if(!job.getCron().equals(oldJob.getCron())
-                        || job.getCronStartDate() != oldJob.getCronStartDate()
-                        || job.getCronEndDate() != oldJob.getCronEndDate()) {
-                    logger.info(">>>=====================>>>   Detect changed");
+            //remove old job
+            Map<String, Job> jobMapCurrent = schedulerManager.getMapJobs();
+            logger.info("jobMapCronEnableOld\t" + jobMapCronEnableOld.size() + "\t" + jobMapCronNew.size());
+            for (String key : jobMapCurrent.keySet()) {
+                Job job = jobMapCurrent.get(key);
+                if (!jobMapCronNew.containsKey(key)) {
+                    logger.info("Remove job from scheduler: " + job.getName());
+                    schedulerManager.removeJob(job);
                 }
             }
-            jobCronEnableOld = jobCronEnable;
+
+            //add new job if not exists
+            for (String key : jobMapCronNew.keySet()) {
+                if (jobMapCronEnableOld.containsKey(key)) {
+                    Job jobNew = jobMapCronNew.get(key);
+                    Job jobOld = jobMapCronEnableOld.get(key);
+
+                    logger.info(key + "\tStart 8==> jobNew: " + jobNew.getCronStartDate()
+                            + "\tjobOld: " + jobOld.getCronStartDate());
+                    logger.info(key + "\tEnd 8==> jobNew: " + jobNew.getCronEndDate()
+                            + "\tjobOld: " + jobOld.getCronEndDate());
+
+                    boolean isUpdate = false;
+                    if (!jobNew.getCron().equals(jobOld.getCron())) {
+                        isUpdate = true;
+                    }
+
+                    if(jobNew.getCronStartDate() == null) {
+                        //start date is null
+                        if(jobOld.getCronStartDate()!= null) {
+                            isUpdate = true;
+                        }
+                        if(jobNew.getCronEndDate() == null) {
+                            if(jobOld.getCronEndDate() != null) {
+                                isUpdate = true;
+                            }
+                        } else {
+                            if(!jobNew.getCronEndDate().equals(jobOld.getCronEndDate())) {
+                                isUpdate = true;
+                            }
+                        }
+
+                    } else {
+                        //start date not null
+                        if(!jobNew.getCronStartDate().equals(jobOld.getCronStartDate())) {
+                            isUpdate = true;
+                        }
+
+                        if(jobNew.getCronEndDate() == null) {
+                            if(jobOld.getCronEndDate()!= null) {
+                                isUpdate = true;
+                            }
+                        } else {
+                            if(!jobNew.getCronEndDate().equals(jobOld.getCronEndDate())) {
+                                isUpdate = true;
+                            }
+                        }
+                    }
+
+                    if(isUpdate) {
+                        logger.info("Update schedule for job: " + jobNew.getName());
+                        schedulerManager.updateJob(jobNew);
+                    }
+                } else {
+                    logger.info("Add job to scheduler: " + key);
+                    schedulerManager.addJob(jobMapCronNew.get(key));
+                }
+            }
+            jobMapCronEnableOld = jobMapCronNew;
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }

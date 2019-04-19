@@ -215,7 +215,7 @@ public class Job {
     public boolean equals(Object obj) {
         if(obj.getClass().equals(Job.class)) {
             Job other = (Job) obj;
-            return this.getID() == other.getID();
+            return this.getName().equals(other.getName());
         }
         return true;
     }

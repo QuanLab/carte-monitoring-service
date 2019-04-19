@@ -8,7 +8,9 @@ import org.quartz.impl.matchers.GroupMatcher;
 import vn.five9.data.model.Job;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -65,8 +67,34 @@ public class SchedulerManager {
 
         if (job.getCronStartDate() != null) {
             triggerBuilder.startAt(job.getCronStartDate());
-        } else {
-            triggerBuilder.startNow();
+        }
+        if (job.getCronEndDate() != null) {
+            triggerBuilder.endAt(job.getCronEndDate());
+        }
+        Trigger trigger = triggerBuilder.build();
+        scheduler.scheduleJob(job1, trigger);
+    }
+
+    /**
+     * add new scheduler for job if not exist, otherwise update it
+     *
+     * @param job
+     */
+    public void updateJob(Job job) throws SchedulerException {
+        JobKey jobKey = new JobKey(job.getName());
+        if (scheduler.checkExists(jobKey)) {
+            removeJob(job);
+        }
+        JobDetail job1 = JobBuilder.newJob(PentahoJob.class)
+                .withIdentity(jobKey)
+                .build();
+
+        TriggerBuilder<CronTrigger> triggerBuilder = TriggerBuilder.newTrigger()
+                .withIdentity(new TriggerKey(job.getName()))
+                .withSchedule(CronScheduleBuilder.cronSchedule(job.getCron()));
+
+        if (job.getCronStartDate() != null) {
+            triggerBuilder.startAt(job.getCronStartDate());
         }
         if (job.getCronEndDate() != null) {
             triggerBuilder.endAt(job.getCronEndDate());
@@ -148,5 +176,17 @@ public class SchedulerManager {
         return jobList;
     }
 
-
+    /**
+     * @return
+     * @throws SchedulerException
+     */
+    public Map<String, Job> getMapJobs() throws SchedulerException {
+        Map<String, Job> jobMap = new HashMap<>();
+        for (JobKey jobKey : scheduler.getJobKeys(GroupMatcher.anyGroup())) {
+            Job job = new Job();
+            job.setName(jobKey.getName());
+            jobMap.put(job.getName(), job);
+        }
+        return jobMap;
+    }
 }
