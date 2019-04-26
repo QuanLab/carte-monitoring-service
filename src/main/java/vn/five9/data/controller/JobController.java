@@ -12,18 +12,19 @@ import java.util.Date;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api/v1/")
 public class JobController {
 
     private static final Logger logger  = LogManager.getLogger();
 
-    @RequestMapping("/api/v1/jobs")
+    @RequestMapping("jobs")
     public JobList jobList(@RequestParam(value="limit", defaultValue="20") int limit,
                             @RequestParam(value="offset", defaultValue="0") int offset) {
 
         return JobService.getJobList(limit, offset);
     }
 
-    @PostMapping("/api/v1/job")
+    @PostMapping("job")
     public ResponseData updateJob(@RequestBody Job job) {
         logger.info(job);
         ResponseData responseData = new ResponseData();
@@ -39,18 +40,18 @@ public class JobController {
         return responseData;
     }
 
-    @RequestMapping(value = "/api/v1/jobStatus", produces = "application/json")
+    @RequestMapping(value = "jobStatus", produces = "application/json")
     public JobStatus jobStatus(@RequestParam(value="name", defaultValue="") String name,
                                @RequestParam(value="id", defaultValue="") String id) {
         return JobService.getJobStatus(name, id);
     }
 
-    @RequestMapping(value = "/api/v1/jobStatusList", produces = "application/json")
+    @RequestMapping(value = "jobStatusList", produces = "application/json")
     public List<JobStatus> jobStatusList(@RequestParam(value="name", defaultValue="") String name) {
         return JobService.getJobStatusList(name);
     }
 
-    @RequestMapping("/api/v1/advancedSearch")
+    @RequestMapping("advancedSearch")
     public List<Job> advancedSearchJobs(@RequestParam(value="q", defaultValue="") String term,
                                         @RequestParam(value="status", defaultValue="") String status,
                                         @RequestParam(value="from", defaultValue="") String from,
@@ -76,7 +77,7 @@ public class JobController {
         return JobService.advancedSearchJobs(term, status, fromDate, toDate, schedulerType, limit);
     }
 
-    @PostMapping("/api/v1/startJob")
+    @PostMapping("startJob")
     public ResponseData startJob(@RequestBody JobInstance jobInstance) {
 
         logger.info(jobInstance.toString());
@@ -95,7 +96,7 @@ public class JobController {
         return responseData;
     }
 
-    @RequestMapping("/api/v1/startJob")
+    @RequestMapping("startJob")
     public ResponseData startJob(@RequestParam(value="name", defaultValue="") String jobName) {
         logger.info("jobName " + jobName);
 
@@ -113,7 +114,7 @@ public class JobController {
         return responseData;
     }
 
-    @PostMapping("/api/v1/stopJob")
+    @PostMapping("stopJob")
     public ResponseData stopJob(@RequestBody JobInstance jobInstance) {
         ResponseData responseData = new ResponseData();
         logger.info(jobInstance.toString());
@@ -129,7 +130,7 @@ public class JobController {
         return responseData;
     }
 
-    @RequestMapping("/api/v1/stopJob")
+    @RequestMapping("stopJob")
     public ResponseData stopJob(@RequestParam(value="name", defaultValue="") String jobName,
                                 @RequestParam(value="instanceId", defaultValue="") String instanceId) {
         ResponseData responseData = new ResponseData();

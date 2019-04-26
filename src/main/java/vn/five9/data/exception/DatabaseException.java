@@ -1,5 +1,6 @@
 package vn.five9.data.exception;
 
+
 public class DatabaseException extends Exception {
 
     public DatabaseException( String msg ) {

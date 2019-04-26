@@ -24,7 +24,7 @@ public class JobService {
     private static final Logger logger  = LogManager.getLogger();
 
     /**
-     * get list job in from public repository
+     * get list job in from static repository
      * @param limit
      *  number of items will be return
      * @param offset

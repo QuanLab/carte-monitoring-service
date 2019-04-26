@@ -16,6 +16,6 @@ public class PentahoJob implements Job {
     public void execute(JobExecutionContext context) throws JobExecutionException {
         String jobName = context.getJobDetail().getKey().getName();
         logger.info("Run \'" + jobName + "\' at: " + new Date());
-//        JobService.startJob(jobName, null);
+        JobService.startJob(jobName, null);
     }
 }
