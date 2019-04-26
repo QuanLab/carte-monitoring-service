@@ -317,32 +317,34 @@ public class JobRepository {
 
             if (job.getSchedulerType() == 0) {  //no need to update other, this is no scheduler
                 stmt.addBatch(getSQLQuery(0, job.getID(), "schedulerType"));
-                if (job.isCronEnable()) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("UPDATE R_JOBENTRY_ATTRIBUTE_EXT SET CRON_EXPRESSION =?, CRON_ENABLE = true ");
-                    if (job.getCronStartDate() != null) {
-                        sb.append(", CRON_START_DATE=? ");
-                    }
-                    if (job.getCronEndDate() != null) {
-                        sb.append(", CRON_END_DATE=? ");
-                    }
-                    sb.append("WHERE ID_JOB=?");
 
-                    PreparedStatement pst = conn.prepareStatement(sb.toString());
-                    int i = 1;
-                    pst.setString(i, job.getCron());
-                    i++;
-                    if (job.getCronStartDate() != null) {
-                        pst.setDate(i, new java.sql.Date(job.getCronStartDate().getTime()));
-                        i++;
-                    }
-                    if (job.getCronEndDate() != null) {
-                        pst.setDate(i, new java.sql.Date(job.getCronEndDate().getTime()));
-                        i++;
-                    }
-                    pst.setInt(i, job.getID());
-                    pst.executeUpdate();
+                StringBuilder sb = new StringBuilder();
+                sb.append("UPDATE R_JOBENTRY_ATTRIBUTE_EXT SET CRON_EXPRESSION =?, CRON_ENABLE = ? ");
+                if (job.getCronStartDate() != null) {
+                    sb.append(", CRON_START_DATE=? ");
                 }
+                if (job.getCronEndDate() != null) {
+                    sb.append(", CRON_END_DATE=? ");
+                }
+                sb.append("WHERE ID_JOB=?");
+
+                PreparedStatement pst = conn.prepareStatement(sb.toString());
+                int i = 1;
+                pst.setString(i, job.getCron());
+                i++;
+                pst.setBoolean(i, job.isCronEnable());
+                i++;
+                if (job.getCronStartDate() != null) {
+                    pst.setDate(i, new java.sql.Date(job.getCronStartDate().getTime()));
+                    i++;
+                }
+                if (job.getCronEndDate() != null) {
+                    pst.setDate(i, new java.sql.Date(job.getCronEndDate().getTime()));
+                    i++;
+                }
+                pst.setInt(i, job.getID());
+                pst.executeUpdate();
+
             } else if (job.getSchedulerType() == 1) {   //interval (update intervalSeconds and intervalMinutes)
                 stmt.addBatch(getSQLQuery(1, job.getID(), "schedulerType"));
                 stmt.addBatch(getSQLQuery(job.getIntervalMinutes(), job.getID(), "intervalMinutes"));
