@@ -8,7 +8,6 @@ import vn.five9.data.exception.DatabaseException;
 import vn.five9.data.model.Job;
 import vn.five9.data.model.JobStatus;
 import vn.five9.data.service.CarteService;
-import vn.five9.data.util.StringUtil;
 
 import java.sql.*;
 import java.util.*;
@@ -278,7 +277,7 @@ public class JobRepository {
             job.setModifiedDate(rs.getDate(DatabaseMeta.FIELD_JOB_MODIFIED_DATE));
             job.setIsRepeat(rs.getString(DatabaseMeta.FIELD_JOB_IS_REPEAT));
             job.setCronEnable(rs.getBoolean(DatabaseMeta.FIELD_JOB_CRON_ENABLE));
-            job.setCron(StringUtil.deEscapeSQL(rs.getString(DatabaseMeta.FIELD_JOB_CRON_EXPRESSION)));
+            job.setCron(rs.getString(DatabaseMeta.FIELD_JOB_CRON_EXPRESSION));
             job.setCronStartDate(rs.getDate(DatabaseMeta.FIELD_JOB_CRON_START_DATE));
             job.setCronEndDate(rs.getDate(DatabaseMeta.FIELD_JOB_CRON_END_DATE));
             job.setSchedulerType(rs.getInt(DatabaseMeta.FIELD_JOB_SCHEDULER_TYPE));
@@ -367,7 +366,6 @@ public class JobRepository {
                 stmt.addBatch(getSQLQuery(job.getMinutes(), job.getID(), "minutes"));
                 stmt.addBatch(getSQLQuery(job.getDayOfMonth(), job.getID(), "dayOfMonth"));
             }
-
             stmt.executeBatch();
             conn.commit();
         } catch (Exception e) {

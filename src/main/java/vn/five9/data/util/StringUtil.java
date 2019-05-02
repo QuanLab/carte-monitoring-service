@@ -15,6 +15,9 @@ public class StringUtil {
 
 
     public static String deEscapeSQL(String base64text) {
+        if(base64text == null) {
+            return "";
+        }
         return new String(Base64.decodeBase64(base64text));
     }
 }
