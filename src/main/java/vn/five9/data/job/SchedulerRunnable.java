@@ -35,7 +35,7 @@ public class SchedulerRunnable implements Runnable {
 
             //remove old job
             Map<String, Job> jobMapCurrent = schedulerManager.getMapJobs();
-            logger.info("jobMapCronEnableOld\t" + jobMapCronEnableOld.size() + "\t" + jobMapCronNew.size());
+
             for (String key : jobMapCurrent.keySet()) {
                 Job job = jobMapCurrent.get(key);
                 if (!jobMapCronNew.containsKey(key)) {
@@ -49,11 +49,6 @@ public class SchedulerRunnable implements Runnable {
                 if (jobMapCronEnableOld.containsKey(key)) {
                     Job jobNew = jobMapCronNew.get(key);
                     Job jobOld = jobMapCronEnableOld.get(key);
-
-                    logger.info(key + "\tStart 8==> jobNew: " + jobNew.getCronStartDate()
-                            + "\tjobOld: " + jobOld.getCronStartDate());
-                    logger.info(key + "\tEnd 8==> jobNew: " + jobNew.getCronEndDate()
-                            + "\tjobOld: " + jobOld.getCronEndDate());
 
                     boolean isUpdate = false;
                     if (!jobNew.getCron().equals(jobOld.getCron())) {

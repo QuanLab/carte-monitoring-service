@@ -18,10 +18,9 @@ public class JobController {
     private static final Logger logger  = LogManager.getLogger();
 
     @RequestMapping("jobs")
-    public JobList jobList(@RequestParam(value="limit", defaultValue="20") int limit,
-                            @RequestParam(value="offset", defaultValue="0") int offset) {
-
-        return JobService.getJobList(limit, offset);
+    public JobList jobList(@RequestParam(value="offset", defaultValue="0") Integer offset,
+                            @RequestParam(value="limit", defaultValue="20") Integer limit) {
+        return JobService.getJobList(offset, limit);
     }
 
     @PostMapping("job")

@@ -31,10 +31,10 @@ public class JobService {
      *  offset from start of result
      * @return
      */
-    public static JobList getJobList(int limit, int offset) {
+    public static JobList getJobList(Integer offset, Integer limit) {
         List<Job> list = new ArrayList<>();
         try {
-            list = JobRepository.getJobs(limit, offset);
+            list = JobRepository.getJobs(offset, limit);
             list = updateJobStatus(list);
         }catch (Exception e) {
             logger.error(e.getMessage(), e);

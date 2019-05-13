@@ -26,7 +26,7 @@ public class JobRepository {
      * @return
      * @throws SQLException
      */
-    public static List<Job> getJobs(int limit, int offset) throws SQLException {
+    public static List<Job> getJobs(Integer offset, Integer limit) throws SQLException {
         String query = "SELECT" +
                 "        A.ID_JOB," +
                 "        NAME," +
@@ -47,28 +47,28 @@ public class JobRepository {
                 "        CASE WHEN I.VALUE_NUM IS NULL THEN 0 ELSE I.VALUE_NUM END AS DAY_OF_MONTH " +
                 "FROM R_JOB AS A " +
                 "LEFT JOIN (" +
-                "        SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'schedulerType'" +
+                "        SELECT DISTINCT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'schedulerType'" +
                 ") AS B ON  A.ID_JOB = B.ID_JOB " +
                 "LEFT JOIN (" +
-                "        SELECT ID_JOB, VALUE_STR FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'repeat'" +
+                "        SELECT DISTINCT ID_JOB, VALUE_STR FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'repeat'" +
                 ") AS C ON  A.ID_JOB = C.ID_JOB " +
                 "LEFT JOIN (" +
-                "        SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'intervalSeconds'" +
+                "        SELECT DISTINCT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'intervalSeconds'" +
                 ") AS D ON  A.ID_JOB = D.ID_JOB " +
                 "LEFT JOIN (" +
-                "        SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'intervalMinutes'" +
+                "        SELECT DISTINCT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'intervalMinutes'" +
                 ") AS E ON  A.ID_JOB = E.ID_JOB " +
                 "LEFT JOIN (" +
-                "        SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'hour'" +
+                "        SELECT DISTINCT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'hour'" +
                 ") AS F ON  A.ID_JOB = F.ID_JOB " +
                 "LEFT JOIN (" +
-                "        SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'minutes'" +
+                "        SELECT DISTINCT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'minutes'" +
                 ") AS G ON  A.ID_JOB = G.ID_JOB " +
                 "LEFT JOIN (" +
-                "         SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'weekDay'" +
+                "         SELECT DISTINCT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'weekDay'" +
                 ") AS H ON  A.ID_JOB = H.ID_JOB " +
                 "LEFT JOIN (" +
-                "          SELECT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'dayOfMonth' " +
+                "          SELECT DISTINCT ID_JOB, VALUE_NUM FROM R_JOBENTRY_ATTRIBUTE WHERE CODE = 'dayOfMonth' " +
                 ") AS I ON  A.ID_JOB = I.ID_JOB " +
                 "LEFT JOIN R_JOBENTRY_ATTRIBUTE_EXT AS J ON J.ID_JOB = A.ID_JOB " +
                 "LIMIT ? OFFSET ? ;";
